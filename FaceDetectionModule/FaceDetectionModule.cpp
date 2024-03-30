@@ -1,3 +1,6 @@
+#include <opencv4/opencv2/highgui/highgui.hpp>
+#include <dlib/opencv.h>
+#include <dlib/image_processing.h>
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/gui_widgets.h>
 #include <dlib/image_io.h>
@@ -6,44 +9,39 @@
 using namespace dlib;
 using namespace std;
 
-int main(int argc, char** argv)
-{  
+int main(int argc, char **argv)
+{
     try
     {
-        if (argc == 1)
+        cv::VideoCapture cap(0, cv::CAP_V4L2);
+        cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
+        cap.set(cv::CAP_PROP_FRAME_HEIGHT, 520);
+        cap.set(cv::CAP_PROP_FPS, 30);
+        cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+
+        if (!cap.isOpened())
         {
-            cout << "Give some image files as arguments to this program." << endl;
-            return 0;
+            cerr << "Unable to connect to camera" << endl;
+            return 1;
         }
 
         frontal_face_detector detector = get_frontal_face_detector();
         image_window win;
 
-        // Loop over all the images provided on the command line.
-        for (int i = 1; i < argc; ++i)
+        while (!win.is_closed())
         {
-            cout << "Processing image " << argv[i] << endl;
-            array2d<unsigned char> img;
-            load_image(img, argv[i]);
-
-            // Upsample to detect smaller faces in images, bigger image implies slow processing
-            pyramid_up(img);
-
-            std::vector<rectangle> detections = detector(img);
-
-            cout << "Number of faces detected: " << detections.size() << endl;
-            // Now we show the image on the screen and the face detections as
-            // red overlay boxes.
+            cv::Mat temp;
+            if (!cap.read(temp))
+                break;
+            cv_image<bgr_pixel> cimg(temp);
+            std::vector<rectangle> faces_detected = detector(cimg);
             win.clear_overlay();
-            win.set_image(img);
-            win.add_overlay(detections, rgb_pixel(255,0,0));
-
-            cout << "Hit enter to process the next image..." << endl;
-            cin.get();
+            win.set_image(cimg);
+            win.add_overlay(faces_detected, rgb_pixel(255, 0, 0));
         }
     }
 
-    catch (exception& e)
+    catch (exception &e)
     {
         cout << "\nexception thrown!" << endl;
         cout << e.what() << endl;
