@@ -1,4 +1,4 @@
-# Sistema-Preventivo-Robos-Hormiga
+# SPRIA (Sistema de Prevención de Robos con Inteligencia Artificial)
 Sistema que utiliza reconocimiento facial para detectar el ingreso de "mecheros" hacia los locales y prevenir posibles "robos hormiga".
 La idea principal es implementar 3 módulos: detección facial, extracción de las características faciales y reconocimiento facial.
 
