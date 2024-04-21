@@ -1,144 +1,58 @@
 #include <iostream>
 #include <fstream>
+#include <curl/curl.h>
+
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+
 #include "base64.h"
 
-// #include <curlpp/cURLpp.hpp>
-// #include <curlpp/Easy.hpp>
-// #include <curlpp/Options.hpp>
-// #include <opencv2/core/core.hpp>
-// #include <opencv2/highgui/highgui.hpp>
-// #include <opencv2/imgcodecs.hpp>
-
 using namespace std;
-// using namespace curlpp;
 
-// void CreateSchema()
-// {
-// 	try
-// 	{
-// 		Cleanup myCleanup;
-// 		Easy request;
-// 		string endpoint = "http://localhost:8080/v1/schema";
-// 		request.setOpt(new curlpp::options::Url(endpoint));
-
-// 		list<string> header;
-// 		header.push_back("Content-Type: application/json");
-// 		request.setOpt(new curlpp::options::HttpHeader(header));
-
-// 		request.setOpt(new curlpp::options::CustomRequest("POST"));
-
-// 		string payload = R"({
-//         "class": "ImageTest",
-//         "description": "A test collection used for inserting and query images",
-// 		"vectorIndexType": "hnsw",
-//       	"vectorizer": "img2vec-neural",
-// 		"moduleConfig": {
-//           "img2vec-neural": {
-//               "imageFields": [
-//                   "image"
-//               	]
-//           	}
-//       	},
-//         "properties": [
-//             {
-//             "dataType": [
-//                 "string"
-//             ],
-//             "description": "Name of the person in the image",
-//             "name": "name"
-//             },
-//             {
-//             "dataType": [
-//                 "blob"
-//             ],
-//             "description": "The content of the image in base64",
-//             "name": "image"
-//             }
-//         ]
-//     	})";
-
-// 		request.setOpt(new curlpp::options::PostFields(payload));
-// 		request.setOpt(new curlpp::options::PostFieldSize(payload.length()));
-
-// 		request.perform();
-// 		cout << "All done" << endl << endl;
-
-// 	}
-
-// 	catch (curlpp::RuntimeError &e)
-// 	{
-// 		cout << e.what() << endl;
-// 	}
-
-// 	catch (curlpp::LogicError &e)
-// 	{
-// 		cout << e.what() << endl;
-// 	}
-// }
-
-// void ImageToBase64(){
-
-// 	string imagePath = "image_1.jpg";
-
-// 	// Load the image
-//     cv::Mat image = cv::imread(imagePath, cv::IMREAD_COLOR);
-//     if (image.empty()) {
-//         std::cerr << "Error loading image: " << imagePath << std::endl;
-//         return;
-//     }
-
-//     // Encode the image to a Base64 string
-//     std::string encodedImage = encodeMat(image);
-
-// 	// Dump the Base64 encoded string to a text file
-//     std::ofstream outFile("encodedImage.txt");
-//     if (!outFile) {
-//         std::cerr << "Failed to open file for writing." << std::endl;
-//         return;
-//     }
-
-//     outFile << encodedImage;
-//     outFile.close();
-//     std::cout << "Encoded image dumped to encodedImage.txt" << std::endl;
-
-// 	return;
-
-// }
 int main(int argc, char *argv[])
-
 {
+
+	// Take as second input the path of the image to compare
 	if (argc < 2)
 	{
-		std::cerr << "Include the path of an image as a parameter" << std::endl;
+		std::cerr << "Include the path of an image as a second parameter" << std::endl;
 		return 1;
 	}
-
-	std::cout << argv[1] << std::endl;
 	std::string imagePath = argv[1];
 
-	std::string image_data = FileToBinary(imagePath);
-	if (image_data.empty())
+	// Image conversion to binary data
+	std::string imageBinary = FileToBinary(imagePath);
+	if (imageBinary.empty())
 	{
 		return 1;
 	}
 
-	std::string encodedImage = toBase64(image_data);
+	// Image conversion from binary to base 64 encoding
+	std::string encodedImage = toBase64(imageBinary);
+	
+	// JSON object creation with graphQL query in it
+	std::string graphQLQuery = "{Get { Images(nearImage: { image:\"" + encodedImage +"\"}) { image _additional {certainty}} } }";
 
-	std::string query = R"(
-    {
-      "query": "{
-        Get {
-          Images(nearImage: {
-            image: \")" + encodedImage + R"(\"
-          }) {
-            image
-          }
-        }
-      }"
-    }
-    )";
+    rapidjson::Document jsonObj;
+    jsonObj.SetObject();
+	jsonObj.AddMember("query", rapidjson::Value(graphQLQuery.c_str(), jsonObj.GetAllocator()).Move() , jsonObj.GetAllocator());
 
-	std::cout << query << std::endl;
+    // Conversion from JSON object to string
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    jsonObj.Accept(writer);
+    std::string jsonString = buffer.GetString();
+
+	// Request creation using libcurl to retreive data from Weaviate
+	CURL *request = curl_easy_init();
+	curl_easy_setopt(request, CURLOPT_CUSTOMREQUEST, "POST");
+	curl_easy_setopt(request, CURLOPT_URL, "http://localhost:8080/v1/graphql");
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+	curl_easy_setopt(request, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(request, CURLOPT_POSTFIELDS, jsonString.c_str());
+	CURLcode ret = curl_easy_perform(request);
 
 	return 0;
 }

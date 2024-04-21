@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Run from FaceRecognitionModule folder
+
 docker compose up -d
 
 while ! curl --fail -o /dev/null -s http://localhost:8080/v1/.well-known/ready; do
@@ -19,6 +21,7 @@ echo "Images imported"
 
 echo "All nice and ready to go"
 
+mkdir build
 cd ./build
 cmake ..
 make
