@@ -1,7 +1,5 @@
 **Date**: 06/04/2024
 
-**Issue**: Describe the architectural design issue you’re addressing, leaving no questions about why you’re addressing this issue now. Following a minimalist approach, address and document only the issues that need addressing at various points in the life cycle.
-
 **Issue**: Se busca implementar en la arquitectura del sistema una Base de Datos que pueda realizar VSS o metodos de busquedas vectoriales alternativas dado un vector de entrada. El objetivo es no tener que realizar reconocimiento facial "manualmente", si no que una base de datos especializada lo realice de forma más eficiente y rápida en contraste a una implementación propia.
 
 **Decision**: Se ha decidido por implementar la Base de Datos Vectorial Weaviate.
