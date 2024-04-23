@@ -6,7 +6,7 @@
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
 
-#include "base64.h"
+#include "./base64/base64.h"
 
 using namespace std;
 
