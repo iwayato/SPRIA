@@ -54,6 +54,7 @@ int main(int argc, char **argv)
         deserialize("../Models/shape_predictor_5_face_landmarks.dat") >> sp;
         deserialize("../Models/dlib_face_recognition_resnet_model_v1.dat") >> net;
 
+        // Init camera
         VideoCapture cap(0, CAP_V4L2);
 
         // Resolution can be modified if needed
@@ -62,25 +63,45 @@ int main(int argc, char **argv)
         cap.set(CAP_PROP_FPS, 30);
         cap.set(CAP_PROP_FOURCC, VideoWriter::fourcc('M', 'J', 'P', 'G'));
 
+        // Verify if camera is available
         if (!cap.isOpened())
         {
             cerr << "Unable to connect to camera" << endl;
             return 1;
         }
 
+        image_window win;
+
+        // Start reading frames from camera and detecting faces
         while (cap.isOpened())
         {
             Mat frame;
             if (!cap.read(frame))
                 break;
             cv_image<bgr_pixel> cimg(frame);
-            std::vector<rectangle> faces_detected = detector(cimg);
+
+            std::vector<matrix<rgb_pixel>> faces;
+            for (auto face : detector(cimg))
+            {
+                auto shape = sp(cimg, face);
+                matrix<rgb_pixel> face_chip;
+                extract_image_chip(cimg, get_face_chip_details(shape,150,0.25), face_chip);
+                win.clear_overlay();
+                win.set_image(face_chip);
+                faces.push_back(move(face_chip));
+            }
+
+            if (faces.size() != 0)
+            {
+                std::vector<matrix<float,0,1>> face_descriptors = net(faces);
+                cout << face_descriptors.size() << "\n";
+            }
         }
     }
         
     catch (exception &e)
     {
-        cout << "\nexception thrown!" << endl;
+        cout << "\nException thrown!" << endl;
         cout << e.what() << endl;
     }
 }
