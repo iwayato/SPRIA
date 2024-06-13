@@ -1,5 +1,3 @@
-mkdir -p "/build"
-
 if [ -z "$1" ]; then
     echo "No source file provided"
     exit 1

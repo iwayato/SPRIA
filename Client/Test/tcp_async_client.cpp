@@ -8,11 +8,11 @@ int main(int argc, char *argv[])
 {
     try
     {
-        // if (argc != 2)
-        // {
-        //     std::cerr << "Usage: client <host>" << std::endl;
-        //     return 1;
-        // }
+        if (argc != 2)
+        {
+            std::cerr << "Usage: client <host>" << std::endl;
+            return 1;
+        }
 
         boost::asio::io_context io_context;
 
@@ -20,7 +20,6 @@ int main(int argc, char *argv[])
         tcp::resolver::results_type endpoints = resolver.resolve(argv[1], "daytime");
 
         tcp::socket socket(io_context);
-        // boost::asio::connect(socket, tcp::endpoint(tcp::v4(), 13));
         boost::asio::connect(socket, endpoints);
 
         for (;;)
