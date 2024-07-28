@@ -1,5 +1,6 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from pymilvus import MilvusClient
+import json
 
 app = Flask(__name__)
 # Run with <flask --app api run --debug>
@@ -63,13 +64,14 @@ def load_state(collection_name):
     except:
         return "Collection name does not exist"
 
-@app.route("/insert_vector/<data>/<collection_name>", methods=['GET'])
-def insert_vector(data, collection_name):
+@app.route("/insert_vector", methods=['POST'])
+def insert_vector():
     try:
         response = server.insert(
-            collection_name=collection_name,
-            data=data
+            collection_name='faces',
+            data=request.get_json()
         )
-        return response
+        res = json.dumps(response, default=str)
+        return res
     except:
         return "An error has occurred"
