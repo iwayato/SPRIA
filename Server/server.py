@@ -30,7 +30,7 @@ is_loaded = server.get_load_state(
 print("Estado de carga de la colección: ", is_loaded)
 
 # To release the collection
-# server.release_collection(
-#     collection_name=available_collections[0]
-# )
+server.release_collection(
+    collection_name=available_collections[0]
+)
 
