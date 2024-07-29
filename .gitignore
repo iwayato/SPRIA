@@ -6,3 +6,4 @@ tcp_async_server
 *.db
 .venv
 __pycache__
+dlib
