@@ -1,7 +1,7 @@
 import cv2 as cv
 import dlib
 import helpers
-import requests
+import pip._vendor.requests as requests
 import json
 from datetime import datetime, date
 
